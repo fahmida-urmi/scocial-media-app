@@ -15,4 +15,8 @@ urlpatterns = [
     path('post/<int:post_id>/comment/', views.add_comment, name='add_comment'),
     path('delete_comment/<int:comment_id>/', views.delete_comment, name='delete_comment'),
     path('post/<int:post_id>/share/', views.share_post, name='share_post'),
+    
+    
+    
+    
 ]

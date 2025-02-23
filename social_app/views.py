@@ -10,7 +10,36 @@ from .forms import CustomUserCreationForm, PostForm, CommentForm, UserProfileFor
 from django.contrib.auth import logout
 from django.db.models import Count, Q
 from django.contrib.auth.models import User
+from django.shortcuts import render
+from django.views.generic import ListView
+from .models import Post
 
+class HomeListView(ListView):
+    model = Post
+    template_name = 'social_app/home.html'
+    context_object_name = 'posts'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('q', '')
+        filter_by_user = self.request.GET.get('user', '')
+        filter_by_media = self.request.GET.get('media', '')
+        sort_by = self.request.GET.get('sort', 'latest')
+
+        if search_query:
+            queryset = queryset.filter(content__icontains=search_query)
+        if filter_by_user:
+            queryset = queryset.filter(user__username=filter_by_user)
+        if filter_by_media == 'text':
+            queryset = queryset.filter(image__isnull=True)
+        elif filter_by_media == 'image':
+            queryset = queryset.filter(image__isnull=False)
+        if sort_by == 'oldest':
+            queryset = queryset.order_by('created_at')
+        else:
+            queryset = queryset.order_by('-created_at')
+        
+        return queryset
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -118,6 +147,7 @@ def profile(request, username=None):
     }
     
     return render(request, 'social_app/profile.html', context)
+
 @login_required
 def like_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
@@ -134,11 +164,10 @@ def like_post(request, post_id):
         # AJAX request
         return JsonResponse({
             'action': action,
-            'like_count': post.like_count,
-            'liked': action == 'liked'  # Return true if liked, false if unliked
+            'like_count': post.like_count
         })
     else:
-        # Regular request (non-AJAX)
+        # Regular request
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', reverse('home')))
 
 @login_required
@@ -209,3 +238,29 @@ def delete_comment(request, comment_id):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
+class PostListView(ListView):
+    model = Post
+    template_name = 'your_template.html'
+
+    def get_queryset(self):
+        queryset = Post.objects.all()
+        date_filter = self.request.GET.get('date')
+        media_filter = self.request.GET.get('media_type')
+        user_filter = self.request.GET.get('user')
+
+        if date_filter:
+            if date_filter == 'latest':
+                queryset = queryset.order_by('-created_at')
+            elif date_filter == 'oldest':
+                queryset = queryset.order_by('created_at')
+
+        if media_filter:
+            if media_filter == 'images':
+                queryset = queryset.filter(image__isnull=False)
+            elif media_filter == 'text-only':
+                queryset = queryset.filter(image__isnull=True)
+
+        if user_filter:
+            queryset = queryset.filter(user__username=user_filter)
+
+        return queryset
