@@ -22,7 +22,7 @@ Frontend: HTML, CSS,Bootsrap, JavaScript
 Database: SQLite
 Image Processing: Pillow 11.1.0
 Installation Guide
-Clone the repository:
+Clone the repository:https://github.com/fahmida-urmi/scocial-media-app.git
 
 bash
 Copy
